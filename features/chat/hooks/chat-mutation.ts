@@ -42,6 +42,13 @@ export function useChatMutation({
         return data.content;
       } catch (error) {
         if (axios.isAxiosError(error)) {
+          if (error.response?.status === 429) {
+            throw new Error(
+              (error.response.data as { error?: string })?.error ??
+                "You've sent too many messages. Please wait",
+            );
+          }
+
           throw new Error(
             (error.response?.data as { error?: string })?.error ??
               "Failed to send message",

@@ -39,7 +39,6 @@ export default function Home() {
     if (!persona || !trimmed || chatMutation.isPending) return;
 
     const currentPersona = persona;
-    const history = personaMessages;
     setMessages((prev) =>
       appendMessage(
         prev,

@@ -1,4 +1,4 @@
-import { axiosInstance } from "@/app/lib/axiosInstance";
+import { axiosInstance } from "@/lib/axiosInstance";
 import type { ChatMessage, Persona } from "@/lib/types";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";

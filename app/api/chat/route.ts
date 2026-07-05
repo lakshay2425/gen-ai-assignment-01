@@ -1,16 +1,15 @@
+import { getOpenAIClient } from "@/lib/get-openai-client";
 import {
   HITESH_SIR_SYSTEM_PROMPT,
   PIYUSH_SIR_SYSTEM_PROMPT,
 } from "@/lib/PROMPT";
 import { rateLimit } from "@/lib/rate-limit";
-// import { tools } from "@/lib/tools";
 import {
   MAX_INPUT_LENGTH,
   MAX_OUTPUT_TOKENS,
   type Persona,
 } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 import { z } from "zod";
 
 const chatRequestSchema = z.object({
@@ -27,9 +26,6 @@ const chatRequestSchema = z.object({
   ),
 });
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 function getSystemPrompt(persona: Persona): string {
   return persona === "hitesh"
@@ -66,13 +62,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: "OpenAI API key is not configured" },
-        { status: 500 },
-      );
-    }
-
     const body = await request.json();
     const parsed = chatRequestSchema.safeParse(body);
 
@@ -84,8 +73,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { persona, message, history } = parsed.data;
-
-    const completion = await openai.chat.completions.create({
+    const openaiClient = getOpenAIClient();
+    const completion = await openaiClient.chat.completions.create({
       model: "gpt-4o-mini",
       max_tokens: MAX_OUTPUT_TOKENS,
       messages: [
@@ -96,18 +85,15 @@ export async function POST(request: NextRequest) {
         })),
         { role: "user", content: message },
       ],
-      // ...(tools.length > 0 ? { tools } : {}),
     });
 
     const content = completion.choices[0]?.message?.content;
-
     if (!content) {
       return NextResponse.json(
         { error: "No response from OpenAI" },
         { status: 502 },
       );
     }
-
     return NextResponse.json({ content });
   } catch (error) {
     console.error("Chat API error:", error);

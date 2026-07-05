@@ -1,8 +1,9 @@
+import { CHAT_ERRORS } from "@/lib/chat-errors";
+
 type RateLimitEntry = {
   count: number;
   resetAt: number;
 };
-
 const requests = new Map<string, RateLimitEntry>();
 
 const MINUTE_LIMIT = 5;
@@ -61,7 +62,7 @@ export function rateLimit(ip: string): RateLimitResult & { error?: string } {
   if (!minute.success) {
     return {
       ...minute,
-      error: "Too many requests. Please try again later.",
+      error: CHAT_ERRORS.RATE_LIMIT,
     };
   }
 
@@ -70,7 +71,7 @@ export function rateLimit(ip: string): RateLimitResult & { error?: string } {
   if (!day.success) {
     return {
       ...day,
-      error: "Daily request limit reached. Please try again tomorrow.",
+      error: CHAT_ERRORS.RATE_LIMIT,
     };
   }
 

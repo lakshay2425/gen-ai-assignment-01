@@ -1,4 +1,5 @@
 import { axiosInstance } from "@/lib/axiosInstance";
+import { CHAT_ERRORS } from "@/lib/chat-errors";
 import type { ChatMessage, Persona } from "@/lib/types";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -42,17 +43,17 @@ export function useChatMutation({
         return data.content;
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          if (error.response?.status === 429) {
-            throw new Error(
-              (error.response.data as { error?: string })?.error ??
-                "You've sent too many messages. Please wait",
-            );
+          const status = error.response?.status;
+
+          if (status === 429) {
+            throw new Error(CHAT_ERRORS.RATE_LIMIT);
           }
 
-          throw new Error(
-            (error.response?.data as { error?: string })?.error ??
-              "Failed to send message",
-          );
+          if (status === 502 || status === 503) {
+            throw new Error(CHAT_ERRORS.AI_UNAVAILABLE);
+          }
+
+          throw new Error("Failed to send message");
         }
         throw error;
       }
@@ -66,8 +67,8 @@ export function useChatMutation({
       });
       setInput("");
     },
-    onError: (error: Error) => {
-      toast.error(error.message);
+    onError: () => {
+      toast.error("Failed to generate response");
     },
   });
 }

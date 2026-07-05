@@ -1,4 +1,5 @@
 import { getOpenAIClient } from "@/lib/get-openai-client";
+import { CHAT_ERRORS, mapOpenAIError } from "@/lib/chat-errors";
 import {
   HITESH_SIR_SYSTEM_PROMPT,
   PIYUSH_SIR_SYSTEM_PROMPT,
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error ?? "Too many requests. Please try again later." },
+        { error: CHAT_ERRORS.RATE_LIMIT },
         {
           status: 429,
           headers: {
@@ -90,16 +91,22 @@ export async function POST(request: NextRequest) {
     const content = completion.choices[0]?.message?.content;
     if (!content) {
       return NextResponse.json(
-        { error: "No response from OpenAI" },
+        { error: CHAT_ERRORS.AI_UNAVAILABLE },
         { status: 502 },
       );
     }
     return NextResponse.json({ content });
   } catch (error) {
     console.error("Chat API error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate response" },
-      { status: 500 },
-    );
+
+    if (error instanceof Error && error.message === "OPENAI_API_KEY is not configured") {
+      return NextResponse.json(
+        { error: CHAT_ERRORS.AI_UNAVAILABLE },
+        { status: 503 },
+      );
+    }
+
+    const mapped = mapOpenAIError(error);
+    return NextResponse.json({ error: mapped.error }, { status: mapped.status });
   }
 }

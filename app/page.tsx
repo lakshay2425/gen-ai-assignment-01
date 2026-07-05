@@ -11,6 +11,8 @@ import {
 import { MessageSquarePlusIcon, SendIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useChatMutation } from "@/features/chat/hooks/chat-mutation";
+import { appendMessage, createMessage } from "@/features/chat/utils/messages";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -31,11 +33,22 @@ export default function Home() {
     });
   }, [personaMessages.length, chatMutation.isPending]);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SubmitEvent) => {
     event.preventDefault();
     const trimmed = input.trim();
     if (!persona || !trimmed || chatMutation.isPending) return;
 
+    const currentPersona = persona;
+    const history = personaMessages;
+    setMessages((prev) =>
+      appendMessage(
+        prev,
+        createMessage("user", trimmed, currentPersona),
+      ),
+    );
+  
+    setInput("");
+  
     chatMutation.mutate({
       userMessage: trimmed,
       history: personaMessages,
@@ -44,13 +57,23 @@ export default function Home() {
   };
 
   const handleNewChat = () => {
-    setMessages([]);
-    setPersona(null);
+    if (!persona || chatMutation.isPending) {
+      toast.error("Please wait for the current chat to complete");
+      return;
+    }
+    setMessages((prev) =>
+      prev.filter((message) => message.persona !== persona),
+    );  
     setInput("");
     chatMutation.reset();
+    toast.success("New chat started");
   };
 
   const handlePersonaSelect = (selected: Persona) => {
+    if(chatMutation.isPending) {
+      toast.error("Please wait for the current chat to complete");
+      return;
+    }
     setPersona(selected);
     setInput("");
   };

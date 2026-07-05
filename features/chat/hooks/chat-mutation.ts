@@ -57,14 +57,10 @@ export function useChatMutation({
         throw error;
       }
     },
-    onSuccess: (assistantContent, { userMessage, activePersona }) => {
+    onSuccess: (assistantContent, {  activePersona }) => {
       setMessages((prev) => {
-        const withUser = appendMessage(
-          prev,
-          createMessage("user", userMessage, activePersona),
-        );
         return appendMessage(
-          withUser,
+          prev,
           createMessage("assistant", assistantContent, activePersona),
         );
       });
